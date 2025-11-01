@@ -47,9 +47,7 @@ export default function Page() {
         {tasks.map((task) => (
           <li
             key={task.id}
-            className={`p-4 rounded-lg shadow ${
-              task.completed ? 'bg-green-200' : 'bg-gray-200'
-            }`}
+            className={`p-4 rounded-lg shadow ${task.completed ? 'bg-green-200' : 'bg-gray-200'}`}
           >
             <label className="flex items-center space-x-2 cursor-pointer text-black">
               <input
