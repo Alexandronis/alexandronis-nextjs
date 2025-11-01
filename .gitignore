@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+.tmp
+.jest-cache
 
 # next.js
 /.next/
