@@ -43,11 +43,13 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "prettier --write",
-      "eslint --fix --max-warnings=0"
+      "eslint --fix --max-warnings=0",
+      "prettier --write"
     ],
     "*.{json,css,scss,md}": [
       "prettier --write"
-    ]
+    ],
+    "!test-results/*": "echo 'Skipping Playwright output'",
+    "!playwright-report/*": "echo 'Skipping Playwright output'"
   }
 }
