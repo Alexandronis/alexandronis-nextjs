@@ -9,15 +9,14 @@ on:
       - main
 
 jobs:
-  build-and-test:
+  unit-tests:
     runs-on: ubuntu-latest
-
     steps:
       # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Install pnpm (required before using pnpm commands)
+      # 2️⃣ Install pnpm
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -44,18 +43,56 @@ jobs:
         run: pnpm build
 
       # 7️⃣ Run Jest unit tests
-      - name: Run Jest tests
-        run: pnpm test
+      - name: Run Jest tests with coverage
+        run: pnpm test -- --coverage
 
-      # 8️⃣ Install Playwright browsers
+      # ✅ Upload Jest coverage artifact
+      - name: Upload Jest Coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jest-coverage
+          path: coverage/
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      # 1️⃣ Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Install pnpm
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
+      # 3️⃣ Setup Node.js with pnpm cache
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      # 4️⃣ Install dependencies
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # 5️⃣ Build Next.js app
+      - name: Build Next.js
+        run: pnpm build
+
+      # 6️⃣ Install Playwright browsers
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps
 
-      # 9️⃣ Run Playwright E2E tests
+      # 7️⃣ Run Playwright E2E tests
       - name: Run Playwright tests
         run: pnpm exec playwright test
 
-      # 🔟 Upload Playwright report (even if tests fail)
+      # 8️⃣ Upload Playwright report (even if tests fail)
       - name: Upload Playwright Report
         if: always()
         uses: actions/upload-artifact@v4
