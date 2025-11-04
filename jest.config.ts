@@ -7,7 +7,10 @@ const config: Config = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
-  testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/'],
+
+  // ✅ Ignore Next.js build, node_modules, and Playwright tests
+  testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/', '<rootDir>/tests/e2e/'],
+
   cacheDirectory: '<rootDir>/.jest-cache',
 };
 

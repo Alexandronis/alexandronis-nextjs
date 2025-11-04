@@ -10,7 +10,10 @@
     "format": "prettier --write .",
     "prepare": "husky install",
     "test": "TMPDIR=.tmp jest",
-    "test:watch": "TMPDIR=.tmp jest --watch"
+    "test:watch": "TMPDIR=.tmp jest --watch",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.5",
@@ -20,6 +23,7 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@types/jest": "^30.0.0",
@@ -43,11 +47,13 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "prettier --write",
-      "eslint --fix --max-warnings=0"
+      "eslint --fix --max-warnings=0",
+      "prettier --write"
     ],
     "*.{json,css,scss,md}": [
       "prettier --write"
-    ]
+    ],
+    "!test-results/*": "echo 'Skipping Playwright output'",
+    "!playwright-report/*": "echo 'Skipping Playwright output'"
   }
 }
