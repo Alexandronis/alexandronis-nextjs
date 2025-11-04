@@ -26,8 +26,7 @@ export default defineConfig({
       use: {
         ...devices['Desktop Firefox'],
         launchOptions: {
-          args: ['--no-sandbox'],
-          env: { HOME: '/root' }, // ✅ Fix for Firefox permission issue
+          args: ['--no-sandbox'], // ✅ Fix for Firefox permission issue
         },
       },
     },
