@@ -42,9 +42,10 @@ jobs:
       - name: Build Next.js
         run: pnpm build
 
-      # 7️⃣ Run Jest unit tests
+      # ✅ Run Jest tests with coverage
       - name: Run Jest tests with coverage
-        run: pnpm test -- --coverage
+        run: |
+          pnpm test -- --coverage --coverageReporters=text-summary --coverageReporters=lcov
 
       # ✅ Upload Jest coverage artifact
       - name: Upload Jest Coverage
