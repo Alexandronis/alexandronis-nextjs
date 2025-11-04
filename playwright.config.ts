@@ -3,6 +3,12 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests/e2e', // directory for E2E tests
   timeout: 30 * 1000, // 30 seconds per test
+  webServer: {
+    command: 'pnpm start',
+    port: 3000,
+    timeout: 120 * 1000,
+    reuseExistingServer: !process.env.CI,
+  },
   expect: { timeout: 5000 }, // wait time for assertions
   fullyParallel: true, // run tests in parallel
   reporter: [['list'], ['html']], // console + HTML report
