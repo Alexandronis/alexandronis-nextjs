@@ -8,54 +8,119 @@ on:
     branches:
       - main
 
+# -------------------------------
+# 1️⃣ Build job (runs first)
+# -------------------------------
 jobs:
-  build-and-test:
+  build:
     runs-on: ubuntu-latest
+    outputs:
+      build-cache-key: ${{ steps.cache-key.outputs.key }}
 
     steps:
-      # 1️⃣ Checkout repository
+      # Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Install pnpm (required before using pnpm commands)
+      # Install pnpm
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9
           run_install: false
 
-      # 3️⃣ Setup Node.js with pnpm cache
+      # Setup Node.js with pnpm cache
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
 
-      # 4️⃣ Install dependencies
+      # Install dependencies
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # 5️⃣ Run ESLint
+      # Run ESLint
       - name: Run ESLint
         run: pnpm lint
 
-      # 6️⃣ Build Next.js app
+      # Build Next.js app
       - name: Build Next.js
         run: pnpm build
 
-      # 7️⃣ Run Jest unit tests
+      # Optional cache key for sharing
+      - name: Save build cache key
+        id: cache-key
+        run: echo "key=$(date +%s)" >> $GITHUB_OUTPUT
+
+  # -------------------------------
+  # 2️⃣ Jest Unit Tests
+  # -------------------------------
+  unit-tests:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Run Jest tests
         run: pnpm test
 
-      # 8️⃣ Install Playwright browsers
-      - name: Install Playwright Browsers
+  # -------------------------------
+  # 3️⃣ Playwright E2E Tests
+  # -------------------------------
+  e2e-tests:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps
 
-      # 9️⃣ Run Playwright E2E tests
-      - name: Run Playwright tests
-        run: pnpm exec playwright test
+      - name: Start Next.js app
+        run: pnpm exec next start &
+        env:
+          NODE_ENV: production
 
-      # 🔟 Upload Playwright report (even if tests fail)
+      - name: Run Playwright tests
+        run: pnpm exec playwright test --reporter=list
+        env:
+          CI: true
+
       - name: Upload Playwright Report
         if: always()
         uses: actions/upload-artifact@v4
