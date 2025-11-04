@@ -8,50 +8,44 @@ on:
     branches:
       - main
 
-# -------------------------------
-# 1️⃣ Build job (runs first)
-# -------------------------------
 jobs:
+  # -------------------------------
+  # 1️⃣ Build job
+  # -------------------------------
   build:
     runs-on: ubuntu-latest
-    outputs:
-      build-cache-key: ${{ steps.cache-key.outputs.key }}
 
     steps:
-      # Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Install pnpm
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9
           run_install: false
 
-      # Setup Node.js with pnpm cache
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
 
-      # Install dependencies
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Run ESLint
       - name: Run ESLint
         run: pnpm lint
 
-      # Build Next.js app
-      - name: Build Next.js
+      - name: Build Next.js app
         run: pnpm build
 
-      # Optional cache key for sharing
-      - name: Save build cache key
-        id: cache-key
-        run: echo "key=$(date +%s)" >> $GITHUB_OUTPUT
+      # ✅ Upload build output for later jobs
+      - name: Upload production build
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build
+          path: .next/
 
   # -------------------------------
   # 2️⃣ Jest Unit Tests
@@ -107,6 +101,13 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # ✅ Download the Next.js build from the build job
+      - name: Download production build
+        uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: .next/
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps
