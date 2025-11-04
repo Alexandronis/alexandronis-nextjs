@@ -43,8 +43,16 @@ jobs:
         run: pnpm build
 
       # 7️⃣ Run Jest unit tests
-      - name: Run Jest tests
-        run: pnpm test
+      - name: Run Jest tests with coverage
+        run: pnpm test -- --coverage
+
+      # ✅ Upload Jest coverage artifact
+      - name: Upload Jest Coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jest-coverage
+          path: coverage/
 
   e2e-tests:
     runs-on: ubuntu-latest
