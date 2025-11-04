@@ -9,10 +9,12 @@ on:
       - main
 
 jobs:
-  # 1️⃣ Build job — runs first
+  # -------------------------------
+  # 1) Build job
+  # -------------------------------
   build:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 25
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -35,21 +37,33 @@ jobs:
       - name: Run ESLint
         run: pnpm lint
 
-      - name: Build Next.js
+      - name: Build Next.js app
         run: pnpm build
 
-      # ✅ Upload the .next build for reuse
-      - name: Upload build artifact
+      # DEBUG: list build output so we know .next exists
+      - name: List .next folder
+        run: |
+          echo "PWD: $(pwd)"
+          echo ".next exists?"; ls -la .next || echo ".next missing"
+          echo "Show tree of .next (limited to depth 2)"
+          if [ -d .next ]; then find .next -maxdepth 2 -type f -print | sed -n '1,200p'; fi
+
+      # Upload .next (explicit), always try to upload so we can debug
+      - name: Upload Next.js build
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: next-build
-          path: .next/
+          path: |
+            .next
+          retention-days: 1
 
-  # 2️⃣ Unit tests (depends on successful build)
+  # -------------------------------
+  # 2) Unit tests (runs after build)
+  # -------------------------------
   unit-tests:
-    runs-on: ubuntu-latest
     needs: build
-
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -68,25 +82,38 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      # ✅ Download the build (optional for Jest)
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: next-build
-          path: .next/
 
       - name: Run Jest tests
         run: pnpm test
 
-  # 3️⃣ E2E tests (depends on build)
+  # -------------------------------
+  # 3) E2E tests (runs after build)
+  # -------------------------------
   e2e-tests:
-    runs-on: ubuntu-latest
     needs: build
-
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      # Debug: show workspace before download
+      - name: Show repo before download
+        run: ls -la || true
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: ./
+
+      # Debug: show workspace after download
+      - name: Show workspace after artifact download
+        run: |
+          echo "PWD: $(pwd)"
+          ls -la
+          echo "Show .next top-level"
+          ls -la .next || echo ".next missing after download"
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -103,18 +130,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # ✅ Download the build for Playwright server
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: next-build
-          path: .next/
-
-      - name: Install Playwright Browsers
+      - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps
 
       - name: Run Playwright tests
         run: pnpm exec playwright test --reporter=list
+        env:
+          CI: true
 
       - name: Upload Playwright Report
         if: always()
