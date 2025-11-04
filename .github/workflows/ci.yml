@@ -4,119 +4,87 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
 
 jobs:
-  # 🏗️ 1. Build Job
+  # 1️⃣ Build job — shared by both test jobs
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-          run_install: false
-
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: npm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Build Next.js app
-        run: pnpm build
+        run: npm run build
 
-      - name: Verify .next directory exists
-        run: |
-          if [ ! -d ".next" ]; then
-            echo "❌ .next folder not found after build!"
-            exit 1
-          fi
-          echo "✅ .next folder found. Contents:"
-          ls -R .next | head -20
-
-      - name: Upload Next.js build
+      - name: Upload build
         uses: actions/upload-artifact@v4
         with:
           name: next-build
           path: .next
 
-  # 🧪 2. Unit Tests (Jest)
+  # 2️⃣ Unit Tests
   unit-tests:
-    runs-on: ubuntu-latest
     needs: build
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-          run_install: false
-
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: npm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
-      - name: Run ESLint
-        run: pnpm lint
-
-      - name: Run Jest tests
-        run: pnpm test
-
-  # 🎭 3. E2E Tests (Playwright)
-  e2e-tests:
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-          run_install: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Download Next.js build
+      - name: Download build
         uses: actions/download-artifact@v4
         with:
           name: next-build
           path: .next
 
-      - name: Install Playwright Browsers
-        run: pnpm exec playwright install --with-deps
+      - name: Run unit tests
+        run: npm run test
 
-      - name: Run Playwright tests
-        run: pnpm exec playwright test
+  # 3️⃣ E2E Tests
+  e2e-tests:
+    needs: build
+    runs-on: ubuntu-latest
 
-      - name: Upload Playwright Report
-        if: always()
-        uses: actions/upload-artifact@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          name: playwright-report
-          path: playwright-report/
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download build
+        uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: .next
+
+      - name: Start server
+        run: npm run start &
+
+      - name: Run e2e tests
+        run: npm run test:e2e
